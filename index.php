@@ -5,9 +5,19 @@
 $deathDate = null;
 $message = '';
 $birthdate = '';
+$gender = '';
+$country = '';
+$health = 'average';
+$smoker = 'no';
+$risk = 'no';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $birthdate = $_POST['birthdate'] ?? '';
+    $gender = $_POST['gender'] ?? '';
+    $country = $_POST['country'] ?? '';
+    $health = $_POST['health'] ?? 'average';
+    $smoker = $_POST['smoker'] ?? 'no';
+    $risk = $_POST['risk'] ?? 'no';
     
     if (empty($birthdate)) {
         $message = "Please enter your birthdate";
@@ -25,23 +35,43 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $age = $now->diff($birth);
                 $currentAge = $age->y;
                 
-                // Average life expectancy (assumed to be around 80 years)
-                $averageLifespan = 80;
+                // Enhanced life expectancy algorithm:
+                // 1. Base expectancy by location and gender
+                $baseExpectancyByCountry = [
+                    'Netherlands' => 82, 'United States' => 78,
+                    'Japan' => 84, 'India' => 69, 'Germany' => 81
+                ];
+                $base = $baseExpectancyByCountry[$country] ?? 80;
+                if ($gender === 'female') {
+                    $base += 3;
+                } elseif ($gender === 'male') {
+                    $base -= 2;
+                }
+                // 2. Health factor adjustment
+                $healthAdj = ['poor' => -5, 'average' => 0, 'good' => 5][$health] ?? 0;
+                // 3. Smoking
+                $smokeAdj = ($smoker === 'yes') ? -10 : 3;
+                // 4. Risk activities
+                $riskAdj = ($risk === 'yes') ? -7 : 0;
+                // 5. Advances in medicine: add small buffer
+                $medicineAdv = 2;
+                // Compute adjusted lifespan
+                $adjustedLifespan = $base + $healthAdj + $smokeAdj + $riskAdj + $medicineAdv;
                 
                 // Remaining years (rough estimate)
-                $remainingYears = $averageLifespan - $currentAge;
+                $remainingYears = $adjustedLifespan - $currentAge;
                 
                 if ($remainingYears <= 0) {
-                    $message = "Based on average statistics, you've already exceeded the average lifespan. Congratulations!";
-                    $deathDate = "You're living bonus time!";
+                    $message = "You've exceeded your personalized expectancy—enjoy your bonus time!";
+                    $deathDate = "Bonus life!";
                 } else {
-                    // Calculate hypothetical death date
+                    // Calculate hypothetical death date using adjusted lifespan
                     $deathDateObj = clone $birth;
-                    $deathDateObj->add(new DateInterval("P{$averageLifespan}Y"));
+                    $deathDateObj->add(new DateInterval("P{$adjustedLifespan}Y"));
                     
                     // Format the death date
                     $deathDate = $deathDateObj->format('F j, Y');
-                    $message = "Based on an average lifespan of {$averageLifespan} years, your hypothetical departure date would be:";
+                    $message = "Based on personalized factors, your hypothetical departure date would be:";
                 }
             }
         } catch (Exception $e) {
@@ -84,7 +114,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             margin-bottom: 5px;
             font-weight: bold;
         }
-        input[type="date"] {
+        input[type="date"], input[type="text"], select {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
@@ -127,6 +157,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <label for="birthdate">Enter your birthdate:</label>
                 <input type="date" id="birthdate" name="birthdate" value="<?php echo htmlspecialchars($birthdate); ?>" required>
             </div>
+            <div class="form-group">
+                <label for="gender">Gender:</label>
+                <select id="gender" name="gender" required>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="country">Country:</label>
+                <input type="text" id="country" name="country" placeholder="e.g. Netherlands" value="<?php echo htmlspecialchars($country); ?>" required>
+            </div>
+            <div class="form-group">
+                <label for="health">Health Status:</label>
+                <select id="health" name="health">
+                    <option value="poor">Poor</option>
+                    <option value="average" selected>Average</option>
+                    <option value="good">Good</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Smoker?</label>
+                <label><input type="radio" name="smoker" value="no" checked> No</label>
+                <label><input type="radio" name="smoker" value="yes"> Yes</label>
+            </div>
+            <div class="form-group">
+                <label>High-risk lifestyle activities?</label>
+                <label><input type="radio" name="risk" value="no" checked> No</label>
+                <label><input type="radio" name="risk" value="yes"> Yes</label>
+            </div>
             
             <button type="submit">Calculate</button>
         </form>
@@ -141,7 +201,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <?php endif; ?>
         
         <div class="disclaimer">
-            <p>Disclaimer: This is for entertainment purposes only. The calculation is based on simple statistics and does not take into account personal health factors, lifestyle choices, accidents, advances in medicine, or countless other variables that influence actual life expectancy.</p>
+            <p>Disclaimer: For entertainment only. This personalized calculation uses statistical averages adjusted for gender, country-based expectancy, health status, smoking habits, risk activities, and expected medical advances. It does not guarantee actual outcomes.</p>
         </div>
     </div>
 </body>
