@@ -72,7 +72,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
         h1 {
-            color: #333;
+            color: #e30000;
             border-bottom: 2px solid #eee;
             padding-bottom: 10px;
         }
